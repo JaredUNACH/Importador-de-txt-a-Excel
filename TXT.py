@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from tkinter import PhotoImage
 import pandas as pd
 
 def process_excel_file(excel_file_path, output_file_path):
@@ -86,15 +87,35 @@ def select_file():
         output_file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
         if output_file_path:
             process_excel_file(excel_file_path, output_file_path)
-            messagebox.showinfo("Success", f"File processed and saved as {output_file_path}")
+            messagebox.showinfo("Éxito", f"Archivo procesado y guardado como {output_file_path}")
+
+def exit_app():
+    if messagebox.askokcancel("Salir", "¿Estás seguro de que deseas salir?"):
+        root.destroy()
 
 # Crear la ventana principal de tkinter.
 root = tk.Tk()
 root.title("Procesador de Excel")
 
+# Configurar la ventana en pantalla completa.
+root.attributes('-fullscreen', True)
+
+# Agregar el logo de la empresa.
+logo = PhotoImage(file="logoFabes.png")
+logo_label = tk.Label(root, image=logo)
+logo_label.pack(pady=10)
+
+# Crear un título.
+title_label = tk.Label(root, text="Procesador de Excel", font=("Helvetica", 16, "bold"))
+title_label.pack(pady=10)
+
 # Crear un botón para seleccionar el archivo Excel.
-select_button = tk.Button(root, text="Seleccionar archivo Excel", command=select_file)
+select_button = tk.Button(root, text="Seleccionar archivo Excel", command=select_file, font=("Helvetica", 12), bg="#4CAF50", fg="white")
 select_button.pack(pady=20)
+
+# Crear un botón para salir de la aplicación.
+exit_button = tk.Button(root, text="Salir", command=exit_app, font=("Helvetica", 12), bg="#f44336", fg="white")
+exit_button.pack(pady=20)
 
 # Ejecutar el bucle principal de tkinter.
 root.mainloop()
