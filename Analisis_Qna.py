@@ -12,19 +12,24 @@ def compare_excel_files(file1_path, file2_path):
         df1['Descuento'] = pd.to_numeric(df1['Descuento'].replace({',': ''}, regex=True), errors='coerce').fillna(0)
         df2['Descuento'] = pd.to_numeric(df2['Descuento'], errors='coerce').fillna(0)
         
-        # Calcular la suma de los descuentos para cada archivo.
-        total_descuento_file1 = df1['Descuento'].sum()
-        total_descuento_file2 = df2['Descuento'].sum()
+        # Agrupar los descuentos por RFC y sumar los descuentos para cada RFC.
+        grouped_df1 = df1.groupby('RFC')['Descuento'].apply(list).reset_index()
+        grouped_df2 = df2.groupby('RFC')['Descuento'].apply(list).reset_index()
         
         # Comparar los RFCs.
-        merged_df = pd.merge(df1, df2, on='RFC', how='outer', suffixes=('_file1', '_file2'), indicator=True)
+        merged_df = pd.merge(grouped_df1, grouped_df2, on='RFC', how='outer', suffixes=('_file1', '_file2'), indicator=True)
         
         # Identificar los RFCs faltantes en cada archivo.
         missing_in_file1 = merged_df[merged_df['_merge'] == 'right_only']
         missing_in_file2 = merged_df[merged_df['_merge'] == 'left_only']
         
         # Identificar los RFCs cuyos descuentos no coinciden.
-        different_discounts = merged_df[(merged_df['_merge'] == 'both') & (merged_df['Descuento_file1'] != merged_df['Descuento_file2'])]
+        def compare_discounts(row):
+            if row['_merge'] == 'both':
+                return sorted(row['Descuento_file1']) != sorted(row['Descuento_file2'])
+            return False
+        
+        different_discounts = merged_df[merged_df.apply(compare_discounts, axis=1)]
         
         # Crear una nueva ventana para mostrar los resultados.
         result_window = tk.Toplevel(root)
@@ -54,6 +59,8 @@ def compare_excel_files(file1_path, file2_path):
         title_label.pack(pady=10)
         
         # Mostrar las sumas de los descuentos.
+        total_descuento_file1 = df1['Descuento'].sum()
+        total_descuento_file2 = df2['Descuento'].sum()
         total_label_file1 = tk.Label(scrollable_frame, text=f"Total Descuento Archivo 1: {total_descuento_file1:.2f}", font=("Helvetica", 12))
         total_label_file1.pack(pady=5)
         total_label_file2 = tk.Label(scrollable_frame, text=f"Total Descuento Archivo 2: {total_descuento_file2:.2f}", font=("Helvetica", 12))
