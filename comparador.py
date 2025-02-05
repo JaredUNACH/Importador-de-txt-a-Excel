@@ -17,11 +17,14 @@ def compare_excel_files(file1_path, file2_path):
         total_descuento_file2 = df2['Descuento'].sum()
         
         # Comparar los RFCs.
-        merged_df = pd.merge(df1, df2, on='RFC', how='outer', indicator=True)
+        merged_df = pd.merge(df1, df2, on='RFC', how='outer', suffixes=('_file1', '_file2'), indicator=True)
         
         # Identificar los RFCs faltantes en cada archivo.
         missing_in_file1 = merged_df[merged_df['_merge'] == 'right_only']
         missing_in_file2 = merged_df[merged_df['_merge'] == 'left_only']
+        
+        # Identificar los RFCs cuyos descuentos no coinciden.
+        different_discounts = merged_df[(merged_df['_merge'] == 'both') & (merged_df['Descuento_file1'] != merged_df['Descuento_file2'])]
         
         # Crear una nueva ventana para mostrar los resultados.
         result_window = tk.Toplevel(root)
@@ -37,38 +40,60 @@ def compare_excel_files(file1_path, file2_path):
         total_label_file2 = tk.Label(result_window, text=f"Total Descuento Archivo 2: {total_descuento_file2:.2f}", font=("Helvetica", 12))
         total_label_file2.pack(pady=5)
         
-        # Crear un Treeview para mostrar los resultados.
+        # Crear un Treeview para mostrar los RFCs faltantes.
         style = ttk.Style()
         style.configure("Treeview.Heading", font=("Helvetica", 12, "bold"))
         style.configure("Treeview", font=("Helvetica", 10), rowheight=25)
         style.map("Treeview", background=[("selected", "lightblue")], foreground=[("selected", "black")])
         
-        tree = ttk.Treeview(result_window, columns=("RFC", "Archivo"), show='headings', selectmode="extended")
-        tree.heading("RFC", text="RFC")
-        tree.heading("Archivo", text="Archivo")
+        tree_missing = ttk.Treeview(result_window, columns=("RFC", "Archivo"), show='headings', selectmode="extended")
+        tree_missing.heading("RFC", text="RFC")
+        tree_missing.heading("Archivo", text="Archivo")
         
         # Insertar los RFCs faltantes en el primer archivo.
         for index, row in missing_in_file1.iterrows():
-            tree.insert("", "end", values=(row['RFC'], "Faltante en Archivo 1"))
+            tree_missing.insert("", "end", values=(row['RFC'], "Faltante en Archivo 1"))
         
         # Insertar los RFCs faltantes en el segundo archivo.
         for index, row in missing_in_file2.iterrows():
-            tree.insert("", "end", values=(row['RFC'], "Faltante en Archivo 2"))
+            tree_missing.insert("", "end", values=(row['RFC'], "Faltante en Archivo 2"))
         
-        tree.pack(expand=True, fill='both')
+        tree_missing.pack(expand=True, fill='both')
         
         # Añadir líneas de separación
-        tree.tag_configure('oddrow', background='lightgrey')
-        tree.tag_configure('evenrow', background='white')
+        tree_missing.tag_configure('oddrow', background='lightgrey')
+        tree_missing.tag_configure('evenrow', background='white')
         
-        for i, item in enumerate(tree.get_children()):
+        for i, item in enumerate(tree_missing.get_children()):
             if i % 2 == 0:
-                tree.item(item, tags=('evenrow',))
+                tree_missing.item(item, tags=('evenrow',))
             else:
-                tree.item(item, tags=('oddrow',))
+                tree_missing.item(item, tags=('oddrow',))
+        
+        # Crear un Treeview para mostrar los descuentos que no cuadran.
+        tree_different = ttk.Treeview(result_window, columns=("RFC", "Descuento Archivo 1", "Descuento Archivo 2"), show='headings', selectmode="extended")
+        tree_different.heading("RFC", text="RFC")
+        tree_different.heading("Descuento Archivo 1", text="Descuento Archivo 1")
+        tree_different.heading("Descuento Archivo 2", text="Descuento Archivo 2")
+        
+        # Insertar los RFCs cuyos descuentos no coinciden.
+        for index, row in different_discounts.iterrows():
+            tree_different.insert("", "end", values=(row['RFC'], row['Descuento_file1'], row['Descuento_file2']))
+        
+        tree_different.pack(expand=True, fill='both')
+        
+        # Añadir líneas de separación
+        tree_different.tag_configure('oddrow', background='lightgrey')
+        tree_different.tag_configure('evenrow', background='white')
+        
+        for i, item in enumerate(tree_different.get_children()):
+            if i % 2 == 0:
+                tree_different.item(item, tags=('evenrow',))
+            else:
+                tree_different.item(item, tags=('oddrow',))
         
         # Función para copiar los valores seleccionados al portapapeles.
-        def copy_to_clipboard():
+        def copy_to_clipboard(tree):
             selected_items = tree.selection()
             if selected_items:
                 values = [tree.item(item, "values")[0] for item in selected_items]
@@ -80,8 +105,11 @@ def compare_excel_files(file1_path, file2_path):
                 messagebox.showwarning("Advertencia", "No hay elementos seleccionados.")
         
         # Botón para copiar los RFCs seleccionados al portapapeles.
-        copy_button = tk.Button(result_window, text="Copiar RFCs seleccionados", command=copy_to_clipboard)
-        copy_button.pack(pady=10)
+        copy_button_missing = tk.Button(result_window, text="Copiar RFCs seleccionados (Faltantes)", command=lambda: copy_to_clipboard(tree_missing))
+        copy_button_missing.pack(pady=10)
+        
+        copy_button_different = tk.Button(result_window, text="Copiar RFCs seleccionados (Descuentos que no cuadran)", command=lambda: copy_to_clipboard(tree_different))
+        copy_button_different.pack(pady=10)
         
     except FileNotFoundError:
         messagebox.showerror("Error", "Uno o ambos archivos no se encontraron.")
