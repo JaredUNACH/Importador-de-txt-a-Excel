@@ -12,6 +12,10 @@ def compare_excel_files(file1_path, file2_path):
         df1['Descuento'] = pd.to_numeric(df1['Descuento'].replace({',': ''}, regex=True), errors='coerce').fillna(0)
         df2['Descuento'] = pd.to_numeric(df2['Descuento'], errors='coerce').fillna(0)
         
+        # Calcular la suma de los descuentos para cada archivo.
+        total_descuento_file1 = df1['Descuento'].sum()
+        total_descuento_file2 = df2['Descuento'].sum()
+        
         # Comparar los RFCs.
         merged_df = pd.merge(df1, df2, on='RFC', how='outer', indicator=True)
         
@@ -26,6 +30,12 @@ def compare_excel_files(file1_path, file2_path):
         # Agregar un título en la parte superior.
         title_label = tk.Label(result_window, text="202401", font=("Helvetica", 16, "bold"))
         title_label.pack(pady=10)
+        
+        # Mostrar las sumas de los descuentos.
+        total_label_file1 = tk.Label(result_window, text=f"Total Descuento Archivo 1: {total_descuento_file1:.2f}", font=("Helvetica", 12))
+        total_label_file1.pack(pady=5)
+        total_label_file2 = tk.Label(result_window, text=f"Total Descuento Archivo 2: {total_descuento_file2:.2f}", font=("Helvetica", 12))
+        total_label_file2.pack(pady=5)
         
         # Crear un Treeview para mostrar los resultados.
         style = ttk.Style()
