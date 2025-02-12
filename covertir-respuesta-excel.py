@@ -10,13 +10,14 @@ def convert_txt_to_excel(txt_file_path, excel_file_path):
         'RESPUESTA': []
     }
 
-    # Leer el archivo .txt y extraer los datos.
+    # Leer el archivo .txt y extraer los datos, omitiendo la primera y la última línea.
     with open(txt_file_path, 'r') as txt_file:
-        for line in txt_file:
+        lines = txt_file.readlines()[1:-1]  # Omitir la primera y la última línea
+        for line in lines:
             rfc = line[135:150].strip()
-            importe_str = line[22:30].strip()
-            importe = float(importe_str) / 100  # Convertir a formato decimal
-            respuesta = line[277:280].strip()
+            importe_str = line[22:29].strip()
+            importe = float(importe_str[:-2] + '.' + importe_str[-2:])  # Convertir a formato decimal
+            respuesta = line[277:279].strip()
             
             data['RFC'].append(rfc)
             data['IMPORTE'].append(importe)
