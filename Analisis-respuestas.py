@@ -50,23 +50,30 @@ def compare_excel_files(file1_path, file2_path):
         title_label = tk.Label(scrollable_frame, text="Comparación de RFCs", font=("Helvetica", 16, "bold"))
         title_label.pack(pady=10)
         
+        # Mostrar el conteo de RFCs faltantes.
+        count_label_file1 = tk.Label(scrollable_frame, text=f"Total RFCs Faltantes en Archivo 1: {len(missing_in_file1)}", font=("Helvetica", 12))
+        count_label_file1.pack(pady=5)
+        count_label_file2 = tk.Label(scrollable_frame, text=f"Total RFCs Faltantes en Archivo 2: {len(missing_in_file2)}", font=("Helvetica", 12))
+        count_label_file2.pack(pady=5)
+        
         # Crear un Treeview para mostrar los RFCs faltantes.
         style = ttk.Style()
         style.configure("Treeview.Heading", font=("Helvetica", 12, "bold"))
-        style.configure("Treeview", font=("Helvetica", 10), rowheight=25)
+        style.configure("Treeview", font=("Helvetica", 10), rowheight=30)
         style.map("Treeview", background=[("selected", "lightblue")], foreground=[("selected", "black")])
         
-        tree_missing = ttk.Treeview(scrollable_frame, columns=("RFC", "Archivo"), show='headings', selectmode="extended")
+        tree_missing = ttk.Treeview(scrollable_frame, columns=("No.", "RFC", "Archivo"), show='headings', selectmode="extended")
+        tree_missing.heading("No.", text="No.")
         tree_missing.heading("RFC", text="RFC")
         tree_missing.heading("Archivo", text="Archivo")
         
         # Insertar los RFCs faltantes en el primer archivo.
-        for rfc in missing_in_file1:
-            tree_missing.insert("", "end", values=(rfc, "Faltante en Archivo 1"))
+        for idx, rfc in enumerate(missing_in_file1, start=1):
+            tree_missing.insert("", "end", values=(idx, rfc, "Faltante en Archivo 1"))
         
         # Insertar los RFCs faltantes en el segundo archivo.
-        for rfc in missing_in_file2:
-            tree_missing.insert("", "end", values=(rfc, "Faltante en Archivo 2"))
+        for idx, rfc in enumerate(missing_in_file2, start=len(missing_in_file1) + 1):
+            tree_missing.insert("", "end", values=(idx, rfc, "Faltante en Archivo 2"))
         
         tree_missing.pack(expand=True, fill='both')
         
@@ -84,7 +91,7 @@ def compare_excel_files(file1_path, file2_path):
         def copy_to_clipboard(tree):
             selected_items = tree.selection()
             if selected_items:
-                values = [tree.item(item, "values")[0] for item in selected_items]
+                values = [tree.item(item, "values")[1] for item in selected_items]
                 clipboard_text = "\n".join(values)
                 result_window.clipboard_clear()
                 result_window.clipboard_append(clipboard_text)

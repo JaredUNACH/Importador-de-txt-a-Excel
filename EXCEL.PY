@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
+import re
 
 def process_excel_file(excel_file_path, output_file_path):
     # Leer el archivo Excel.
@@ -8,6 +9,9 @@ def process_excel_file(excel_file_path, output_file_path):
     
     # Imprimir los nombres de las columnas para verificar.
     print("Columnas en el archivo Excel:", df.columns.tolist())
+    
+    # Eliminar todos los caracteres excepto números y puntos decimales en la columna IMPORTE.
+    df['IMPORTE'] = df['IMPORTE'].astype(str).apply(lambda x: re.sub(r'[^0-9.]', '', x))
     
     # Convertir la columna IMPORTE a tipo numérico.
     df['IMPORTE'] = pd.to_numeric(df['IMPORTE'], errors='coerce').fillna(0)
